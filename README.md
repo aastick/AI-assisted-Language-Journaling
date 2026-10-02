@@ -264,13 +264,15 @@ We are not looking for the largest feature set. We are looking for a coherent, w
 
 Lingua Journal delays all correction until after the learner has finished writing. Each completed review contains a corrected full version, a short encouragement, and a small set of categorized corrections with English explanations. This keeps the writing experience interruption-free while making the later review specific and teachable.
 
+The Writing screen pairs a focused editor with a feedback panel, so the learner can write without interruption and review the suggested rewrite only after submitting. The Entries screen reopens a saved entry alongside its full feedback. The optional Insights screen turns those saved corrections into recurring-pattern summaries.
+
 I deliberately left out authentication, collaboration, inline editing, streaks, and automatic translation. They would increase surface area without strengthening the core writing-to-feedback loop.
 
 ## Local AI
 
 The app uses Ollama with `qwen2.5:7b`, an open-weight model that runs locally. Journal text stays on the machine; no paid API key is needed. The model itself is not part of this repository because it is several gigabytes.
 
-The API calls Ollama's local `POST /api/chat` endpoint with a JSON schema. The model returns a corrected text, encouragement, and structured corrections. The backend validates that response with Zod before it persists it. A malformed or unavailable response is never treated as feedback: the original entry is saved with a failed status and the caller receives a recoverable error.
+The API calls Ollama's local `POST /api/chat` endpoint with a JSON schema. The model returns a corrected text, encouragement, and structured corrections. The backend validates that response with Zod before it persists it and retries one malformed local-model response automatically. A malformed or unavailable response is never treated as feedback: the original entry is saved with a failed status and the caller receives a recoverable error.
 
 ## Architecture and data model
 
