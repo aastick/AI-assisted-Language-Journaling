@@ -262,7 +262,7 @@ We are not looking for the largest feature set. We are looking for a coherent, w
 
 ## Product decisions
 
-Lingua Journal delays all correction until after the learner has finished writing. Each completed review contains a corrected full version, a short encouragement, and a small set of categorized corrections. This keeps the writing experience interruption-free while making the later review specific and teachable.
+Lingua Journal delays all correction until after the learner has finished writing. Each completed review contains a corrected full version, a short encouragement, and a small set of categorized corrections with English explanations. This keeps the writing experience interruption-free while making the later review specific and teachable.
 
 I deliberately left out authentication, collaboration, inline editing, streaks, and automatic translation. They would increase surface area without strengthening the core writing-to-feedback loop.
 
