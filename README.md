@@ -292,6 +292,15 @@ Prerequisites: Node.js 20+ and Ollama on macOS 14+.
 # Install Ollama from https://ollama.com/download/mac
 ollama pull qwen2.5:7b
 
+# Start the local AI service (leave this running)
+ollama serve
+```
+
+In a second terminal:
+
+```bash
+cd /path/to/AI-assisted-Language-Journaling
+
 npm install
 cp .env.example .env
 npm run dev
@@ -302,6 +311,7 @@ Open `http://localhost:5173`. The API runs at `http://localhost:3001` and create
 On this machine, if the `ollama` command is not yet on your shell PATH, start the installed app and use its full executable path:
 
 ```bash
+open -a Ollama
 /Applications/Ollama.app/Contents/Resources/ollama pull qwen2.5:7b
 ```
 
