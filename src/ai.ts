@@ -40,6 +40,19 @@ export class OllamaProvider implements AiProvider {
   ) {}
 
   async analyze({ text, language }: { text: string; language: string }): Promise<AiAnalysis> {
+    let lastError: AiOutputError | undefined;
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        return await this.requestAnalysis(text, language, attempt > 0);
+      } catch (error) {
+        if (!(error instanceof AiOutputError)) throw error;
+        lastError = error;
+      }
+    }
+    throw lastError ?? new AiOutputError("Ollama returned feedback in an invalid format.");
+  }
+
+  private async requestAnalysis(text: string, language: string, isRetry: boolean): Promise<AiAnalysis> {
     let response: Response;
     try {
       response = await fetch(`${this.baseUrl}/api/chat`, {
@@ -51,7 +64,7 @@ export class OllamaProvider implements AiProvider {
           format: analysisJsonSchema,
           options: { temperature: 0 },
           messages: [
-            { role: "system", content: "You are a supportive foreign-language writing coach. Return JSON matching the supplied schema. Preserve the writer's intended meaning and identify only meaningful improvements. Field rules: correctedText, original, and suggestion must stay in the learner's target language. encouragement and every explanation must be English only, regardless of the learner's target language. Never write Spanish, French, German, Italian, or Japanese in explanation. For example, for original 'yo fue' and suggestion 'yo fui', the explanation should be 'Use fui because it is the first-person past tense of ir.' If there are no corrections, return an empty corrections array." },
+            { role: "system", content: `You are a supportive foreign-language writing coach. Return JSON matching the supplied schema. Preserve the writer's intended meaning and identify only meaningful improvements. Field rules: correctedText, original, and suggestion must stay in the learner's target language. encouragement and every explanation must be English only, regardless of the learner's target language. Never write Spanish, French, German, Italian, or Japanese in explanation. For example, for original 'yo fue' and suggestion 'yo fui', the explanation should be 'Use fui because it is the first-person past tense of ir.' If the entry is not in the learner's target language, use a vocabulary correction for the full entry and suggest a natural translation. ${isRetry ? "This is a retry because your previous response was invalid. Return only schema-valid JSON with every required field present." : "If there are no corrections, return an empty corrections array."}` },
             { role: "user", content: `The learner is writing in ${language}. Analyze this journal entry:\n\n${text}` }
           ]
         })

@@ -25,4 +25,15 @@ describe("OllamaProvider", () => {
     await expect(provider.analyze({ text: "Hola mundo", language: "Spanish" }))
       .rejects.toBeInstanceOf(AiOutputError);
   });
+
+  it("retries once when the first model response is malformed", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ message: { content: "not JSON" } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ message: { content: JSON.stringify({ correctedText: "Hola.", encouragement: "Nice work.", corrections: [] }) } }) });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const provider = new OllamaProvider("http://ollama.test", "test-model");
+    await expect(provider.analyze({ text: "Hola.", language: "Spanish" })).resolves.toMatchObject({ correctedText: "Hola." });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
 });
