@@ -34,4 +34,10 @@ export type Insights = {
   totalCorrections: number;
   categories: Array<{ category: Correction["category"]; count: number }>;
   frequentPatterns: Array<{ original: string; count: number }>;
+  trend: {
+    direction: "improving" | "needs-attention" | "steady" | "not-enough-history";
+    olderAverage: number | null;
+    recentAverage: number | null;
+    entries: Array<{ createdAt: string; correctionCount: number; correctionsPer100Words: number }>;
+  };
 };

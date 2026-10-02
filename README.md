@@ -264,7 +264,7 @@ We are not looking for the largest feature set. We are looking for a coherent, w
 
 Lingua Journal delays all correction until after the learner has finished writing. Each completed review contains a corrected full version, a short encouragement, and a small set of categorized corrections with English explanations. This keeps the writing experience interruption-free while making the later review specific and teachable.
 
-The Writing screen pairs a focused editor with a feedback panel, so the learner can write without interruption and review the suggested rewrite only after submitting. The Entries screen reopens a saved entry alongside its full feedback. The optional Insights screen turns those saved corrections into recurring-pattern summaries.
+The Writing screen pairs a focused editor with a feedback panel, so the learner can write without interruption and review the suggested rewrite only after submitting. The Entries screen reopens a saved entry alongside its full feedback. The optional Insights screen turns those saved corrections into recurring-pattern summaries and a small correction-density trend chart.
 
 I deliberately left out authentication, collaboration, inline editing, streaks, and automatic translation. They would increase surface area without strengthening the core writing-to-feedback loop.
 
@@ -284,7 +284,7 @@ The React SPA communicates with a small Fastify API. SQLite persists the followi
 
 `POST /api/entries` is intentionally synchronous for this take-home: it stores an entry, requests analysis, validates it, and then stores the feedback in one request. The `status` field makes it possible to move AI analysis to a background queue later without changing the data model.
 
-`GET /api/entries`, `GET /api/entries/:id`, and `GET /api/insights` support history, detailed review, and the optional Stage 2 view. Insights count persisted correction categories and repeated original phrases; they are explicitly presented as review signals, not a claim of measured fluency.
+`GET /api/entries`, `GET /api/entries/:id`, and `GET /api/insights` support history, detailed review, and the optional Stage 2 view. Insights count persisted correction categories and repeated original phrases. The trend chart uses corrections per 100 words for the latest six completed entries, which makes entries of different lengths comparable. It only labels a trend after at least four entries, comparing the older and newer halves of that sample; otherwise it says that more history is needed. These are explicitly presented as review signals, not a claim of measured fluency.
 
 ## Run locally
 
@@ -325,7 +325,7 @@ npm run typecheck
 npm run build
 ```
 
-The automated tests use an in-memory SQLite database and a small fake `AiProvider`. They cover the main create -> analyze -> store -> retrieve flow, invalid input, and Stage 2 correction aggregation without needing a downloaded model. The real application always uses Ollama.
+The automated tests use an in-memory SQLite database and a small fake `AiProvider`. They cover the main create -> analyze -> store -> retrieve flow, invalid input, Stage 2 correction aggregation, and correction-density trend calculation without needing a downloaded model. The real application always uses Ollama.
 
 ## Tradeoffs and next steps
 

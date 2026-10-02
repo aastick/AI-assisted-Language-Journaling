@@ -50,10 +50,10 @@ export class JournalDatabase {
     `);
   }
 
-  createEntry(input: { text: string; language: string }): EntrySummary {
+  createEntry(input: { text: string; language: string }, createdAt = new Date()): EntrySummary {
     const entry: EntryRow = {
       id: randomUUID(), text: input.text, language: input.language, status: "analyzing",
-      created_at: new Date().toISOString(), analysis_error: null
+      created_at: createdAt.toISOString(), analysis_error: null
     };
     this.db.prepare("INSERT INTO entries (id, text, language, status, created_at) VALUES (?, ?, ?, ?, ?)")
       .run(entry.id, entry.text, entry.language, entry.status, entry.created_at);
@@ -97,7 +97,35 @@ export class JournalDatabase {
   getInsights(): Insights {
     const categories = this.db.prepare("SELECT category, COUNT(*) AS count FROM corrections GROUP BY category ORDER BY count DESC, category ASC").all() as Insights["categories"];
     const frequentPatterns = this.db.prepare("SELECT original_text AS original, COUNT(*) AS count FROM corrections GROUP BY original_text HAVING count > 1 ORDER BY count DESC, original_text ASC LIMIT 5").all() as Insights["frequentPatterns"];
-    return { totalCorrections: categories.reduce((total, item) => total + item.count, 0), categories, frequentPatterns };
+    const trendRows = this.db.prepare(`
+      SELECT e.created_at, e.text, COUNT(c.id) AS correction_count
+      FROM entries e
+      LEFT JOIN corrections c ON c.entry_id = e.id
+      WHERE e.status = 'complete'
+      GROUP BY e.id
+      ORDER BY e.created_at DESC
+      LIMIT 6
+    `).all() as Array<{ created_at: string; text: string; correction_count: number }>;
+    const entries = trendRows.reverse().map((row) => {
+      const wordCount = Math.max(1, row.text.trim().split(/\s+/).filter(Boolean).length);
+      return {
+        createdAt: row.created_at,
+        correctionCount: row.correction_count,
+        correctionsPer100Words: Math.round((row.correction_count / wordCount) * 100)
+      };
+    });
+    const midpoint = Math.floor(entries.length / 2);
+    const older = entries.slice(0, midpoint);
+    const recent = entries.slice(midpoint);
+    const average = (items: typeof entries) => items.reduce((total, item) => total + item.correctionsPer100Words, 0) / items.length;
+    const olderAverage = entries.length >= 4 ? Math.round(average(older)) : null;
+    const recentAverage = entries.length >= 4 ? Math.round(average(recent)) : null;
+    const direction = olderAverage === null || recentAverage === null
+      ? "not-enough-history"
+      : recentAverage < olderAverage ? "improving"
+      : recentAverage > olderAverage ? "needs-attention"
+      : "steady";
+    return { totalCorrections: categories.reduce((total, item) => total + item.count, 0), categories, frequentPatterns, trend: { direction, olderAverage, recentAverage, entries } };
   }
 
   close() { this.db.close(); }
